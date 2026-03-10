@@ -53,6 +53,10 @@ services:
       # Log level: trace | debug | info | warn | error | fatal | panic
       WATCHTOWER_LOG_LEVEL: ${WATCHTOWER_LOG_LEVEL:-info}
 
+      # Force Docker API version — needed when the watchtower binary was built
+      # against an older client (1.25) but the daemon requires >= 1.40.
+      DOCKER_API_VERSION: "1.54"
+
     networks:
       - endurance_backend
 
