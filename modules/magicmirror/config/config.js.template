@@ -163,11 +163,7 @@ let config = {
             fetchInterval: 300000,
             symbol: "calendar-check",
             color: "#4fc3f7",
-            url: "YOUR_ICAL_URL",
-            // Ejemplo iCloud:
-            // url: "https://p74-caldav.icloud.com/published/2/XXXXXXXXXXXXXXXX",
-            // Ejemplo Google Calendar:
-            // url: "https://calendar.google.com/calendar/ical/tu%40gmail.com/public/basic.ics",
+            url: "https://p70-caldav.icloud.com/published/2/MTE1OTIzOTkyNjcxMTU5Mm3sp1xGBumy9wsLHHafvMll5kie-U0238DPgF_DVDhW",
           },
           // Añade más calendarios:
           // { symbol: "calendar", color: "#ef9a9a", url: "OTRA_URL_ICAL" },
