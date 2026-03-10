@@ -72,6 +72,7 @@ COPY src/prompts/ prompts/
 RUN mkdir -p /app/data && chown -R helix:helix /app
 
 ENV PATH="/app/.venv/bin:$PATH" \
+    PYTHONPATH="/app/src" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
