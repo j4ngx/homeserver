@@ -205,16 +205,17 @@ let config = {
       module: "MMM-pages",
       config: {
         // Cada sub-array define las clases CSS visibles en esa página.
-        // Los módulos sin clase son siempre visibles.
         modules: [
           ["page1"],    // Página 0 — Tiempo & Hora
           ["page2"],    // Página 1 — Agenda
         ],
-        rotationTime: 25000,     // Cambia de página cada 25 s
-        rotationDelay: 5000,     // Espera 5 s en la primera carga
-        rotationHomePage: 0,     // Vuelve a la página de tiempo como "inicio"
-        indicator: true,         // Muestra los puntos de página
-        animationTime: 1000,     // Duración de la transición (ms)
+        // Módulos siempre visibles (nunca los oculta MMM-pages).
+        fixed: ["clock"],
+        timings: { default: 25000 }, // Cambia de página cada 25 s
+        rotationDelay: 5000,         // Espera 5 s en la primera carga
+        rotationHomePage: 0,         // Vuelve a la página de tiempo como "inicio"
+        indicator: true,             // Muestra los puntos de página
+        animationTime: 1000,         // Duración de la transición (ms)
       },
     },
 
