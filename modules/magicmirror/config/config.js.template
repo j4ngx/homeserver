@@ -151,7 +151,7 @@ let config = {
       classes: "page2",
       config: {
         maximumEntries: 12,
-        maximumNumberOfDays: 30,
+        maximumNumberOfDays: 60,
         fetchInterval: 300000,
         showEnd: true,
         dateFormat: "DD/MM HH:mm",
