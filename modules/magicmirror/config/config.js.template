@@ -71,9 +71,8 @@ let config = {
       position: "top_right",
       classes: "page1",
       config: {
-        weatherProvider: "openweathermap",
+        weatherProvider: "openmeteo",
         type: "current",
-        apiKey: "${OPENWEATHER_API_KEY}",
         // Alhendín, Granada, España
         lat: 37.1136,
         lon: -3.6411,
@@ -93,9 +92,8 @@ let config = {
       position: "top_right",
       classes: "page1",
       config: {
-        weatherProvider: "openweathermap",
+        weatherProvider: "openmeteo",
         type: "forecast",
-        apiKey: "${OPENWEATHER_API_KEY}",
         lat: 37.1136,
         lon: -3.6411,
         units: "metric",
