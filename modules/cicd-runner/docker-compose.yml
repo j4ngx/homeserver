@@ -1,0 +1,52 @@
+# =============================================================================
+# GitHub Actions Self-Hosted Runner — Endurance
+# =============================================================================
+# Runs a GitHub Actions self-hosted runner as a Docker container.
+# The runner auto-registers against a GitHub repository or organization
+# and starts accepting jobs with labels: self-hosted, linux, endurance.
+#
+# SETUP:
+#   1. Copy .env.example → .env
+#   2. Set GITHUB_OWNER, GITHUB_REPO (or GITHUB_OWNER for org-level)
+#   3. Generate a fine-grained PAT or use a registration token:
+#      - Repo: Settings → Actions → Runners → New self-hosted runner
+#      - Org:  Settings → Actions → Runners → New self-hosted runner
+#   4. Set RUNNER_TOKEN in .env
+#   5. Start: docker compose up -d
+# =============================================================================
+
+services:
+  runner:
+    image: myoung34/github-runner:2.321.0
+    container_name: endurance-gh-runner
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      RUNNER_NAME: ${RUNNER_NAME:-endurance-runner}
+      RUNNER_WORKDIR: /tmp/runner/work
+      RUNNER_GROUP: ${RUNNER_GROUP:-default}
+      RUNNER_LABELS: ${RUNNER_LABELS:-self-hosted,linux,endurance}
+      RUNNER_SCOPE: ${RUNNER_SCOPE:-repo}
+      # For repo scope:
+      REPO_URL: https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}
+      # For org scope (set RUNNER_SCOPE=org):
+      # ORG_NAME: ${GITHUB_OWNER}
+      ACCESS_TOKEN: ${RUNNER_TOKEN}
+      DISABLE_AUTO_UPDATE: ${DISABLE_AUTO_UPDATE:-false}
+      EPHEMERAL: ${EPHEMERAL:-false}
+    volumes:
+      # Docker socket is required for workflows to build/deploy containers.
+      # This grants full Docker daemon access — restrict network exposure.
+      - /var/run/docker.sock:/var/run/docker.sock
+      - runner_work:/tmp/runner/work
+    networks:
+      - endurance_backend
+
+volumes:
+  runner_work:
+    driver: local
+
+networks:
+  endurance_backend:
+    external: true
