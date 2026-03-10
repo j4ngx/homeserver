@@ -1,0 +1,43 @@
+# =============================================================================
+# Helix Agent — Personal AI assistant
+# =============================================================================
+# Telegram bot backed by Groq/OpenRouter LLMs with Firebase Firestore memory.
+#
+# Source code: https://github.com/j4ngx/axon_agent (cloned to ./src on install)
+#
+# First time setup:
+#   ./provisioning/scripts/module.sh helix-agent install
+#   ./provisioning/scripts/module.sh helix-agent start
+# =============================================================================
+
+services:
+  helix-agent:
+    build:
+      context: ./src
+      dockerfile: Dockerfile
+    image: endurance-helix-agent:latest
+    container_name: endurance-helix-agent
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /app/service-account.json
+    volumes:
+      # Persistent data (conversation history cache, etc.)
+      - helix-data:/app/data
+      # Firebase service account — mounted read-only, never baked into image
+      - ./service-account.json:/app/service-account.json:ro
+      # Non-secret config — override the image's built-in copy
+      - ./config.yml:/app/config.yml:ro
+    stop_grace_period: 15s
+    healthcheck:
+      # Verifies the Python package is importable (process is alive)
+      test: ["CMD", "python", "-c", "import helix"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  helix-data:
+    driver: local

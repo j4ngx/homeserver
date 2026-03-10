@@ -6,6 +6,10 @@
 .env
 modules/*/.env
 
+# Helix Agent — secrets and cloned source (managed by install.sh)
+modules/helix-agent/service-account.json
+modules/helix-agent/src/
+
 # Runtime data
 *.db
 *.sqlite3
