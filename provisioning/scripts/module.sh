@@ -280,6 +280,9 @@ do_update() {
   local COMPOSE
   COMPOSE="$(compose_cmd)"
 
+  # Prompt for any still-unset required vars before recreating
+  [[ -t 0 ]] && prompt_required_vars "$module_dir"
+
   info "Pulling latest images for ${name}..."
   (cd "$module_dir" && $COMPOSE pull)
   info "Recreating containers..."
