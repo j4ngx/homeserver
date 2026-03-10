@@ -19,7 +19,8 @@ services:
     ports:
       - "8181:8080"       # Web interface on LAN
     volumes:
-      - ./config:/opt/magic_mirror/config:ro
+      # NOT :ro — entrypoint runs envsubst on config.js.template to generate config.js
+      - ./config:/opt/magic_mirror/config
       # NOT :ro — entrypoint must write modules/default on first start,
       # and custom third-party modules (e.g. MMM-Pages) live here too.
       - ./modules:/opt/magic_mirror/modules
