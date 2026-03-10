@@ -88,7 +88,7 @@ do_install() {
   prompt_required_vars "$module_dir"
 
   # Run module-specific install script if present
-  if [[ -x "${module_dir}/install.sh" ]]; then
+  if [[ -f "${module_dir}/install.sh" ]]; then
     info "Running install.sh for ${name}..."
     bash "${module_dir}/install.sh"
   fi
