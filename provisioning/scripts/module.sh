@@ -81,8 +81,11 @@ do_install() {
   # Copy .env.example → .env if not present
   if [[ -f "${module_dir}/.env.example" ]] && [[ ! -f "${module_dir}/.env" ]]; then
     cp "${module_dir}/.env.example" "${module_dir}/.env"
-    warn "Created .env from .env.example — edit ${module_dir}/.env before starting."
+    warn "Created .env from .env.example."
   fi
+
+  # Prompt for any required variables that still have placeholder values
+  prompt_required_vars "$module_dir"
 
   # Run module-specific install script if present
   if [[ -x "${module_dir}/install.sh" ]]; then
@@ -93,11 +96,151 @@ do_install() {
   success "Module '${name}' installed."
 }
 
+###############################################################################
+# Required variable prompting
+###############################################################################
+#
+# Reads .env.example looking for annotation comments placed on the line(s)
+# immediately before a variable assignment.  Supported annotations:
+#
+#   # @required        — variable must be set (prompt if placeholder)
+#   # @secret          — use hidden input (passwords, tokens)
+#   # @desc <text>     — shown in the prompt as context
+#
+# Placeholder detection: a value is considered unfilled when it is empty or
+# matches common placeholder patterns (changeme, your_*, REPLACE_WITH_*, etc.)
+#
+# Called automatically by do_install and (interactively) by do_start.
+###############################################################################
+
+_is_placeholder() {
+  local val="$1"
+  [[ -z "$val" ]] && return 0
+  local lower="${val,,}"
+  local patterns=(
+    "changeme" "your_" "your-" "replace_with_" "_here"
+    "example.com" "placeholder" "<" ">"
+  )
+  for p in "${patterns[@]}"; do
+    [[ "$lower" == *"${p,,}"* ]] && return 0
+  done
+  return 1
+}
+
+prompt_required_vars() {
+  local module_dir="$1"
+  local env_file="${module_dir}/.env"
+  local example_file="${module_dir}/.env.example"
+
+  [[ -f "$example_file" ]] || return 0
+  [[ -f "$env_file" ]]     || return 0
+
+  # ── Pass 1: collect annotated variables from .env.example ────────────
+  local -a annotated_vars=()
+  declare -A _var_secret=()
+  declare -A _var_desc=()
+
+  local pending_required=false
+  local pending_secret=false
+  local pending_desc=""
+
+  while IFS= read -r line; do
+    # Blank line — reset pending annotation state
+    if [[ -z "${line// }" ]]; then
+      pending_required=false
+      pending_secret=false
+      pending_desc=""
+      continue
+    fi
+
+    if [[ "$line" =~ ^#.*@required ]]; then pending_required=true; fi
+    if [[ "$line" =~ ^#.*@secret   ]]; then pending_secret=true;   fi
+    if [[ "$line" =~ ^#[[:space:]]*@desc[[:space:]]+(.*) ]]; then
+      pending_desc="${BASH_REMATCH[1]}"
+    fi
+
+    # Variable assignment — consume pending annotations
+    if [[ "$line" =~ ^([A-Z_][A-Z0-9_]*)= ]]; then
+      local varname="${BASH_REMATCH[1]}"
+      if [[ "$pending_required" == true ]]; then
+        annotated_vars+=("$varname")
+        _var_secret["$varname"]="$pending_secret"
+        _var_desc["$varname"]="$pending_desc"
+      fi
+      pending_required=false
+      pending_secret=false
+      pending_desc=""
+    fi
+  done < "$example_file"
+
+  [[ ${#annotated_vars[@]} -eq 0 ]] && return 0
+
+  # ── Pass 2: find which ones still hold placeholder values ─────────────
+  local -a needs_prompt=()
+  for var in "${annotated_vars[@]}"; do
+    local current_val
+    current_val="$(grep -E "^${var}=" "$env_file" 2>/dev/null | head -1 \
+                   | sed 's/^[^=]*=//' | sed 's/[[:space:]]*#.*//' | xargs)"
+    _is_placeholder "$current_val" && needs_prompt+=("$var")
+  done
+
+  [[ ${#needs_prompt[@]} -eq 0 ]] && return 0
+
+  # ── Pass 3: prompt the user ───────────────────────────────────────────
+  echo
+  echo -e "  ${YELLOW}⚠  Required configuration — please fill in the following values:${NC}"
+  echo
+
+  local changed=false
+  for var in "${needs_prompt[@]}"; do
+    local desc="${_var_desc[$var]:-}"
+    local is_sec="${_var_secret[$var]:-false}"
+
+    local label
+    if [[ -n "$desc" ]]; then
+      label="  ${CYAN}${BOLD}${var}${NC} ${DIM}(${desc})${NC}: "
+    else
+      label="  ${CYAN}${BOLD}${var}${NC}: "
+    fi
+
+    local new_val=""
+    if [[ "$is_sec" == true ]]; then
+      # shellcheck disable=SC2162
+      read -s -p "$(echo -e "${label}")" new_val
+      echo   # newline after hidden input
+    else
+      # shellcheck disable=SC2162
+      read -r -p "$(echo -e "${label}")" new_val
+    fi
+
+    if [[ -n "$new_val" ]]; then
+      # Escape delimiters for sed
+      local esc_val
+      esc_val="$(printf '%s' "$new_val" | sed 's|[/\\&]|\\&|g')"
+      sed -i "s|^${var}=.*|${var}=${esc_val}|" "$env_file"
+      changed=true
+    else
+      warn "  ${var} left unchanged — edit ${env_file} before starting."
+    fi
+  done
+
+  echo
+  [[ "$changed" == true ]] && success "Configuration saved to .env."
+}
+
 do_start() {
   local module_dir="$1"
   local name="$2"
   local COMPOSE
   COMPOSE="$(compose_cmd)"
+
+  # Auto-install if .env was never created, then prompt for required vars.
+  # When running non-interactively (CI) skip prompts entirely.
+  if [[ -f "${module_dir}/.env.example" ]] && [[ ! -f "${module_dir}/.env" ]]; then
+    cp "${module_dir}/.env.example" "${module_dir}/.env"
+    warn "Created .env from .env.example."
+  fi
+  [[ -t 0 ]] && prompt_required_vars "$module_dir"
 
   # Run pre-start hook if present
   if [[ -x "${module_dir}/pre-start.sh" ]]; then
