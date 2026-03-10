@@ -179,8 +179,9 @@ prompt_required_vars() {
   local -a needs_prompt=()
   for var in "${annotated_vars[@]}"; do
     local current_val
+    # grep exits 1 when no match; || true prevents set -e from killing the script
     current_val="$(grep -E "^${var}=" "$env_file" 2>/dev/null | head -1 \
-                   | sed 's/^[^=]*=//' | sed 's/[[:space:]]*#.*//' | xargs)"
+                   | sed 's/^[^=]*=//' | sed 's/[[:space:]]*#.*//' | xargs || true)"
     _is_placeholder "$current_val" && needs_prompt+=("$var")
   done
 
@@ -217,7 +218,14 @@ prompt_required_vars() {
       # Escape delimiters for sed
       local esc_val
       esc_val="$(printf '%s' "$new_val" | sed 's|[/\\&]|\\&|g')"
-      sed -i "s|^${var}=.*|${var}=${esc_val}|" "$env_file"
+      if grep -qE "^${var}=" "$env_file" 2>/dev/null; then
+        # Variable exists in .env — update in place
+        sed -i "s|^${var}=.*|${var}=${esc_val}|" "$env_file"
+      else
+        # Variable missing from .env (e.g. .env created before it was added
+        # to .env.example) — append it
+        printf '\n%s=%s\n' "$var" "$new_val" >> "$env_file"
+      fi
       changed=true
     else
       warn "  ${var} left unchanged — edit ${env_file} before starting."
