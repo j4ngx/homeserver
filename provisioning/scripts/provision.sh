@@ -155,8 +155,7 @@ install_core_packages() {
 
   local pkgs=(
     git curl wget unzip ca-certificates
-    gnupg lsb-release apt-transport-https
-    software-properties-common
+    gnupg lsb-release
     jq htop tree ncdu tmux
     ufw fail2ban
   )
