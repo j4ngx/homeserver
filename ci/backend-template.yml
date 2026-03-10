@@ -1,0 +1,113 @@
+# =============================================================================
+# CI/CD — Backend Build, Test & Deploy to Endurance
+# =============================================================================
+# NOTE: The authoritative workflow lives at:
+#   .github/workflows/backend-template.yml
+# This file is a reference template for creating new backend workflows.
+#
+# HOW TO USE FOR NEW BACKENDS:
+#   1. Copy .github/workflows/backend-template.yml → .github/workflows/<name>.yml
+#   2. Change MODULE_NAME to match the directory under modules/
+#   3. Adjust paths in the 'on.push.paths' filter
+#   4. Commit and push
+# =============================================================================
+
+name: Backend Template — CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "modules/backend-template/**"
+      - ".github/workflows/backend-template.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "modules/backend-template/**"
+
+env:
+  MODULE_NAME: backend-template
+  MODULE_PATH: modules/backend-template
+
+jobs:
+  # ─── Test ────────────────────────────────────────────────────────────
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ${{ env.MODULE_PATH }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: ${{ env.MODULE_PATH }}/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest httpx
+
+      - name: Run tests
+        run: pytest tests/ -v --tb=short
+
+  # ─── Build & Deploy ──────────────────────────────────────────────────
+  deploy:
+    name: Build & Deploy to Endurance
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    # Runs on the self-hosted runner registered on endurance
+    runs-on: [self-hosted, linux, endurance]
+
+    defaults:
+      run:
+        working-directory: ${{ env.MODULE_PATH }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create .env from secrets
+        run: |
+          # Create .env from repository secrets if they exist.
+          # Secrets should be stored in GitHub → Settings → Secrets.
+          cat > .env <<EOF
+          APP_NAME=${{ env.MODULE_NAME }}
+          APP_ENV=production
+          APP_PORT=8000
+          LOG_LEVEL=info
+          DATABASE_URL=${{ secrets.DATABASE_URL || 'sqlite:///./data/app.db' }}
+          EOF
+
+      - name: Build and deploy
+        run: |
+          docker compose pull --ignore-pull-failures 2>/dev/null || true
+          docker compose build --no-cache
+          docker compose up -d --force-recreate --remove-orphans
+
+      - name: Wait for health check
+        run: |
+          echo "Waiting for service to become healthy..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8000/health >/dev/null 2>&1; then
+              echo "✔ Service is healthy"
+              exit 0
+            fi
+            echo "  Attempt ${i}/30 — waiting 2s..."
+            sleep 2
+          done
+          echo "✖ Service did not become healthy in 60s"
+          docker compose logs --tail=50
+          exit 1
+
+      - name: Cleanup old images
+        run: docker image prune -f --filter "until=24h"
