@@ -31,6 +31,7 @@ services:
     environment:
       TZ: ${TZ:-Europe/Madrid}
       OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
+      ICAL_URL: ${ICAL_URL}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080"]
       interval: 30s

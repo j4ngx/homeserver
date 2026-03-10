@@ -163,7 +163,7 @@ let config = {
             fetchInterval: 300000,
             symbol: "calendar-check",
             color: "#4fc3f7",
-            url: "https://p70-caldav.icloud.com/published/2/MTE1OTIzOTkyNjcxMTU5Mm3sp1xGBumy9wsLHHafvMll5kie-U0238DPgF_DVDhW",
+            url: "${ICAL_URL}",
           },
           // Añade más calendarios:
           // { symbol: "calendar", color: "#ef9a9a", url: "OTRA_URL_ICAL" },
