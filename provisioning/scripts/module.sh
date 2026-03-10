@@ -42,6 +42,24 @@ fail()    { echo -e "${RED} ✖  $*${NC}"; exit 1; }
 # Compose command detection
 ###############################################################################
 
+check_docker_access() {
+  docker info >/dev/null 2>&1 && return 0
+
+  local err
+  err="$(docker info 2>&1 || true)"
+
+  if echo "$err" | grep -q "permission denied"; then
+    # Check if user is in the docker group but session hasn't picked it up yet
+    if getent group docker 2>/dev/null | grep -qw "$(id -un)"; then
+      fail "Docker group not active in this session.\n\n  Your user is in the 'docker' group but the current shell session\n  was opened before you were added to it. Fix with either:\n\n    newgrp docker        # activate in the current terminal\n    — or —\n    Log out and back in  # persistent fix"
+    else
+      fail "Permission denied accessing Docker.\n  Run base provisioning to add your user to the docker group:"
+    fi
+  else
+    fail "Docker daemon not reachable. Is Docker running?\n  Try: sudo systemctl start docker"
+  fi
+}
+
 compose_cmd() {
   if docker compose version >/dev/null 2>&1; then
     echo "docker compose"
@@ -399,6 +417,8 @@ main() {
     usage
     exit 1
   fi
+
+  check_docker_access
 
   local command="$1"
 
