@@ -1,0 +1,52 @@
+# =============================================================================
+# Backend Template — Reference backend service
+# =============================================================================
+# A minimal Python (FastAPI) backend to demonstrate the deployment pattern.
+# Copy this entire directory to create new backend services.
+#
+# Access: http://endurance:8000
+# Docs:   http://endurance:8000/docs  (Swagger UI)
+# =============================================================================
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: endurance-backend-template
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    environment:
+      APP_NAME: ${APP_NAME:-backend-template}
+      APP_ENV: ${APP_ENV:-production}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      DATABASE_URL: ${DATABASE_URL:-sqlite:///./data/app.db}
+    volumes:
+      - backend_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - endurance_frontend
+      - endurance_backend
+
+volumes:
+  backend_data:
+    driver: local
+
+networks:
+  endurance_frontend:
+    external: true
+  endurance_backend:
+    external: true
