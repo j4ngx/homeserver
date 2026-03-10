@@ -1,0 +1,61 @@
+# =============================================================================
+# Watchtower — Automatic Docker container updater
+# =============================================================================
+# Periodically checks all running containers for newer images and recreates
+# them with zero-downtime rolling updates where possible.
+#
+# Schedule: Weekly (Sunday 03:00 AM) — configurable via WATCHTOWER_SCHEDULE
+#
+# Excluded containers (never auto-updated):
+#   • endurance-portainer   — managed UI, update manually to control upgrades
+#   • endurance-uptime-kuma — avoid monitoring blind-spots during updates
+#
+# Notifications: Telegram (optional). Set TELEGRAM_BOT_TOKEN and
+# TELEGRAM_CHAT_ID in .env to receive update reports.
+# =============================================================================
+
+services:
+  watchtower:
+    image: containrrr/watchtower:1.7.1
+    container_name: endurance-watchtower
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      TZ: ${TZ:-Europe/Madrid}
+
+      # Run once a week — Sunday at 03:00 AM (cron expression)
+      WATCHTOWER_SCHEDULE: ${WATCHTOWER_SCHEDULE:-0 0 3 * * 0}
+
+      # Clean up old images after update
+      WATCHTOWER_CLEANUP: "true"
+
+      # Rolling restart — stop → pull → start (minimises downtime)
+      WATCHTOWER_ROLLING_RESTART: "true"
+
+      # Containers to NEVER auto-update
+      # Space-separated container names (without the leading /)
+      WATCHTOWER_IGNORE_CONTAINERS: >-
+        endurance-portainer
+        endurance-uptime-kuma
+
+      # ---------- Telegram notifications (optional) ----------
+      # Leave empty to disable
+      WATCHTOWER_NOTIFICATION_URL: ${WATCHTOWER_NOTIFICATION_URL:-}
+
+      # Notify on update and on failure only (not on every poll)
+      WATCHTOWER_NOTIFICATIONS_LEVEL: ${WATCHTOWER_NOTIFICATIONS_LEVEL:-info}
+
+      # Log level: trace | debug | info | warn | error | fatal | panic
+      WATCHTOWER_LOG_LEVEL: ${WATCHTOWER_LOG_LEVEL:-info}
+
+    networks:
+      - endurance_backend
+
+networks:
+  endurance_backend:
+    external: true

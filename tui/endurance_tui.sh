@@ -43,7 +43,7 @@ fi
 # Global state
 ###############################################################################
 
-readonly ENDURANCE_VERSION="1.0.0"
+readonly ENDURANCE_VERSION="1.2.0"
 readonly ENDURANCE_NAME="Endurance Server Manager"
 
 # Module registry — name, description, port, compose dir
@@ -53,6 +53,9 @@ declare -A MODULE_DESC=(
   [magicmirror]="Smart display dashboard"
   [cicd-runner]="GitHub Actions self-hosted runner"
   [backend-template]="Reference backend API service"
+  [uptime-kuma]="Service monitoring & alerting"
+  [watchtower]="Automatic container updater"
+  [nginx-proxy-manager]="Reverse proxy + Let's Encrypt SSL"
 )
 
 declare -A MODULE_PORT=(
@@ -61,6 +64,9 @@ declare -A MODULE_PORT=(
   [magicmirror]="8181"
   [cicd-runner]="—"
   [backend-template]="8000"
+  [uptime-kuma]="3001"
+  [watchtower]="—"
+  [nginx-proxy-manager]="80/443/81"
 )
 
 ###############################################################################
@@ -143,12 +149,12 @@ main_menu() {
     tui_divider "dots"
 
     local name
-    for name in portainer pihole magicmirror cicd-runner backend-template; do
+    for name in portainer pihole magicmirror cicd-runner backend-template uptime-kuma watchtower nginx-proxy-manager; do
       local icon
       icon="$(module_status_icon "$name")"
       local port="${MODULE_PORT[$name]}"
       local desc="${MODULE_DESC[$name]}"
-      printf '    %b  %-20s %b%-30s%b  %b:%s%b\n' \
+      printf '    %b  %-24s %b%-34s%b  %b:%s%b\n' \
         "$icon" "$name" \
         "$TUI_MUTED" "$desc" "$TUI_RESET" \
         "$TUI_DIM" "$port" "$TUI_RESET"
@@ -234,7 +240,7 @@ menu_modules() {
 
     local idx=1
     local -a module_names=()
-    for name in portainer pihole magicmirror cicd-runner backend-template; do
+    for name in portainer pihole magicmirror cicd-runner backend-template uptime-kuma watchtower nginx-proxy-manager; do
       module_names+=("$name")
       local icon
       icon="$(module_status_icon "$name")"
@@ -390,7 +396,7 @@ menu_health() {
   # Module health
   echo -e "  ${TUI_BOLD}Modules${TUI_RESET}"
   tui_divider "dots"
-  for name in portainer pihole magicmirror cicd-runner backend-template; do
+  for name in portainer pihole magicmirror cicd-runner backend-template uptime-kuma watchtower nginx-proxy-manager; do
     local icon
     if module_is_running "$name"; then
       icon="${TUI_SUCCESS}${ICON_CHECK}${TUI_RESET}"
@@ -464,7 +470,7 @@ menu_quick_actions() {
 _all_modules() {
   local action="$1"
   echo
-  for name in portainer pihole magicmirror cicd-runner backend-template; do
+  for name in portainer pihole magicmirror cicd-runner backend-template uptime-kuma watchtower nginx-proxy-manager; do
     if [[ -f "${MODULES_DIR}/${name}/docker-compose.yml" ]]; then
       bash "${PROVISION_DIR}/module.sh" "$name" "$action" 2>/dev/null || true
     fi
@@ -483,18 +489,23 @@ menu_about() {
     "" \
     "A modular, Docker-based home server platform for Debian 13." \
     "" \
-    "Modules:" \
-    "  • Portainer       — Docker management UI" \
-    "  • Pi-hole         — Network-wide ad blocker" \
-    "  • MagicMirror²    — Smart display dashboard" \
-    "  • CI/CD Runner    — GitHub Actions self-hosted runner" \
-    "  • Backend Template— Reference backend API (FastAPI)" \
+    "Core modules:" \
+    "  • Portainer            — Docker management UI" \
+    "  • Pi-hole              — Network-wide ad blocker" \
+    "  • MagicMirror²         — Smart display dashboard" \
+    "  • CI/CD Runner         — GitHub Actions self-hosted runner" \
+    "  • Backend Template     — Reference backend API (FastAPI)" \
+    "" \
+    "Infrastructure modules:" \
+    "  • Uptime Kuma          — Service monitoring & Telegram alerts" \
+    "  • Watchtower           — Automatic container image updater" \
+    "  • Nginx Proxy Manager  — Reverse proxy + Let's Encrypt SSL" \
     "" \
     "Architecture:" \
     "  • All services run in Docker with Compose" \
     "  • Shared networks: endurance_frontend, endurance_backend" \
     "  • Modules are independent and can be toggled individually" \
-    "  • CI/CD deploys backends via self-hosted runner on this host" \
+    "  • NPM proxies all services behind endurance.local" \
     "" \
     "Project: https://github.com/j4ngx/homeserver"
 

@@ -360,6 +360,9 @@ create_module_dirs() {
     "${modules_dir}/pihole"
     "${modules_dir}/portainer"
     "${modules_dir}/backend-template"
+    "${modules_dir}/uptime-kuma"
+    "${modules_dir}/watchtower"
+    "${modules_dir}/nginx-proxy-manager"
   )
 
   for d in "${dirs[@]}"; do
@@ -389,12 +392,16 @@ configure_ufw() {
   ufw allow 22/tcp comment "SSH" >/dev/null 2>&1
 
   # Module ports — allow from LAN only
-  ufw allow 53/tcp  comment "Pi-hole DNS"        >/dev/null 2>&1
-  ufw allow 53/udp  comment "Pi-hole DNS"        >/dev/null 2>&1
-  ufw allow 8080/tcp comment "Pi-hole Web UI"    >/dev/null 2>&1
-  ufw allow 8181/tcp comment "MagicMirror"       >/dev/null 2>&1
-  ufw allow 9443/tcp comment "Portainer HTTPS"   >/dev/null 2>&1
-  ufw allow 8000/tcp comment "Backend API"       >/dev/null 2>&1
+  ufw allow 53/tcp   comment "Pi-hole DNS"          >/dev/null 2>&1
+  ufw allow 53/udp   comment "Pi-hole DNS"          >/dev/null 2>&1
+  ufw allow 80/tcp   comment "NPM HTTP"             >/dev/null 2>&1
+  ufw allow 81/tcp   comment "NPM Admin UI"         >/dev/null 2>&1
+  ufw allow 443/tcp  comment "NPM HTTPS"            >/dev/null 2>&1
+  ufw allow 3001/tcp comment "Uptime Kuma"          >/dev/null 2>&1
+  ufw allow 8080/tcp comment "Pi-hole Web UI"       >/dev/null 2>&1
+  ufw allow 8181/tcp comment "MagicMirror"          >/dev/null 2>&1
+  ufw allow 9443/tcp comment "Portainer HTTPS"      >/dev/null 2>&1
+  ufw allow 8000/tcp comment "Backend API"          >/dev/null 2>&1
 
   # Enable if not already active
   if ufw status | grep -q "Status: inactive"; then

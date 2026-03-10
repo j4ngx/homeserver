@@ -1,0 +1,50 @@
+# =============================================================================
+# Uptime Kuma — Self-hosted monitoring & alerting dashboard
+# =============================================================================
+# Monitors all endurance services (HTTP/TCP/DNS/Docker) with a clean UI.
+# Sends Telegram alerts when a service goes down or recovers.
+#
+# Access: http://endurance:3001
+# First login prompts you to create the admin user.
+#
+# Telegram setup:
+#   1. Create a bot with @BotFather — copy the token into .env
+#   2. Start a chat with your bot and run:
+#      curl "https://api.telegram.org/bot<TOKEN>/getUpdates"
+#      to obtain your Chat ID.
+#   3. Set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in .env
+# =============================================================================
+
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:1.23.16
+    container_name: endurance-uptime-kuma
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    ports:
+      - "3001:3001"        # Web UI — LAN access
+    volumes:
+      - uptime_kuma_data:/app/data
+      # Mount Docker socket read-only for container health monitoring
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      TZ: ${TZ:-Europe/Madrid}
+    healthcheck:
+      test: ["CMD", "extra/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - endurance_frontend
+
+volumes:
+  uptime_kuma_data:
+    driver: local
+
+networks:
+  endurance_frontend:
+    external: true

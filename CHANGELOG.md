@@ -2,6 +2,61 @@
 
 All notable changes to the Endurance home server project are documented here.
 
+## [1.2.0] — 2026-03-10 — Infrastructure modules: Monitoring, Updates & Reverse Proxy
+
+### modules/ — new
+
+#### `modules/uptime-kuma/`
+- **Added** `docker-compose.yml` — `louislam/uptime-kuma:1.23.16`, LAN port 3001, `endurance_frontend` network
+- **Added** `.env.example` — `TZ`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`
+- **Added** `install.sh` — prints first-login guide with all service URLs and Telegram setup instructions
+
+#### `modules/watchtower/`
+- **Added** `docker-compose.yml` — `containrrr/watchtower:1.7.1`, weekly schedule (Sun 03:00), rolling restarts
+  - Excludes `endurance-portainer` and `endurance-uptime-kuma` from auto-updates
+  - Cleans up old images after update
+  - Optional Shoutrrr/Telegram notifications via `WATCHTOWER_NOTIFICATION_URL`
+  - Runs on `endurance_backend` (internal, no port exposure)
+- **Added** `.env.example` — `WATCHTOWER_SCHEDULE`, `WATCHTOWER_NOTIFICATION_URL`, log levels
+- **Added** `install.sh` — prints schedule, excluded containers, Shoutrrr URL format, one-shot command
+
+#### `modules/nginx-proxy-manager/`
+- **Added** `docker-compose.yml` — `jc21/nginx-proxy-manager:2.12.3`, ports 80/443/81, `endurance_frontend` network
+  - `cap_add: NET_BIND_SERVICE` for privileged ports
+  - Volumes: `npm_data`, `npm_letsencrypt`
+- **Added** `.env.example` — `TZ`, `DISABLE_IPV6`
+- **Added** `install.sh` — prints first-login credentials, proxy host table, DNS setup, SSL options
+- **Added** `custom/README.md` — explains where to place custom Nginx snippets
+
+### tui/
+
+#### `tui/endurance_tui.sh`
+- **Added** `uptime-kuma`, `watchtower`, `nginx-proxy-manager` to `MODULE_DESC` and `MODULE_PORT` registries
+- **Added** all three modules to: main-menu status loop, module management list, health dashboard, quick actions (`_all_modules`), and About box
+- **Changed** version bump `1.0.0` → `1.2.0`
+- **Changed** status column widths widened to accommodate longer module names
+
+### provisioning/
+
+#### `provisioning/scripts/provision.sh`
+- **Added** `uptime-kuma`, `watchtower`, `nginx-proxy-manager` to `create_module_dirs()`
+- **Added** UFW rules:
+  - `80/tcp` — NPM HTTP
+  - `81/tcp` — NPM Admin UI
+  - `443/tcp` — NPM HTTPS
+  - `3001/tcp` — Uptime Kuma
+
+### docs/
+
+- **Added** `docs/uptime-kuma.md` — setup guide, monitor list, Telegram notification instructions, env vars
+- **Added** `docs/watchtower.md` — how it works, exclusion list, Shoutrrr notification format, one-shot command
+- **Added** `docs/nginx-proxy-manager.md` — proxy host table, DNS resolution, SSL options (self-signed / LE HTTP-01 / DNS-01), proxy-ready Compose snippet
+- **Updated** `docs/README.md`:
+  - Added three new modules to stack description, Features list, project structure tree, and Module Documentation table
+  - Updated docs directory tree
+
+---
+
 ## [1.1.0] — 2026-03-10 — Hardening & Review Pass
 
 ### provisioning/

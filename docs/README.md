@@ -7,20 +7,32 @@ hostname: endurance
 target:   Debian 13 (fresh install)
 stack:    Docker Engine + Compose · Zsh + OMZ · Portainer · Pi-hole
           MagicMirror² · GitHub Actions runner · FastAPI backend template
+          Uptime Kuma · Watchtower · Nginx Proxy Manager
 ```
 
 ## Table of Contents
 
-- [Features](#features)
-- [Prerequisites](#prerequisites)
-- [Quick Start](#quick-start)
-- [Project Structure](#project-structure)
-- [Base Provisioning](#base-provisioning)
-- [Module Management](#module-management)
-- [TUI Console](#tui-console)
-- [CI/CD](#cicd)
-- [Adding a New Service](#adding-a-new-service)
-- [Module Documentation](#module-documentation)
+- [Endurance — Home Server Platform](#endurance--home-server-platform)
+  - [Table of Contents](#table-of-contents)
+  - [Features](#features)
+  - [Prerequisites](#prerequisites)
+  - [Quick Start](#quick-start)
+  - [Project Structure](#project-structure)
+  - [Base Provisioning](#base-provisioning)
+    - [What It Does](#what-it-does)
+    - [CLI Flags](#cli-flags)
+  - [Module Management](#module-management)
+    - [Available Actions](#available-actions)
+    - [Examples](#examples)
+  - [TUI Console](#tui-console)
+    - [Menu Structure](#menu-structure)
+  - [CI/CD](#cicd)
+    - [Self-Hosted Runner](#self-hosted-runner)
+    - [Workflows](#workflows)
+  - [Adding a New Service](#adding-a-new-service)
+  - [Module Documentation](#module-documentation)
+  - [Assumptions](#assumptions)
+  - [License](#license)
 
 ## Features
 
@@ -30,6 +42,9 @@ stack:    Docker Engine + Compose · Zsh + OMZ · Portainer · Pi-hole
 - **Self-hosted CI/CD** — GitHub Actions runner deploys on push
 - **Docker-first** — all services containerized with health checks
 - **Shared networks** — `endurance_frontend` (exposed) and `endurance_backend` (internal)
+- **Reverse proxy** — Nginx Proxy Manager with Let's Encrypt SSL behind `endurance.local`
+- **Monitoring** — Uptime Kuma with Telegram alerts for all services
+- **Auto-updates** — Watchtower keeps images current on a weekly schedule
 
 ## Prerequisites
 
@@ -80,6 +95,12 @@ homeserver/
 │   ├── pihole/                 # Network-wide ad blocker
 │   ├── magicmirror/            # Smart display dashboard
 │   ├── cicd-runner/            # GitHub Actions self-hosted runner
+│   ├── backend-template/       # Reference backend API (FastAPI)
+│   ├── uptime-kuma/            # Service monitoring & alerting
+│   ├── watchtower/             # Automatic container image updater
+│   └── nginx-proxy-manager/    # Reverse proxy + Let's Encrypt SSL
+│   ├── magicmirror/            # Smart display dashboard
+│   ├── cicd-runner/            # GitHub Actions self-hosted runner
 │   └── backend-template/       # Reference backend API (FastAPI)
 ├── tui/
 │   ├── endurance_tui.sh        # Interactive TUI console
@@ -94,7 +115,10 @@ homeserver/
     ├── pihole.md
     ├── magicmirror.md
     ├── cicd-runner.md
-    └── backend-template.md
+    ├── backend-template.md
+    ├── uptime-kuma.md
+    ├── watchtower.md
+    └── nginx-proxy-manager.md
 ```
 
 ## Base Provisioning
@@ -233,6 +257,9 @@ Workflows live in `.github/workflows/`. Reference templates are also kept in `ci
 | MagicMirror² | [docs/magicmirror.md](magicmirror.md) | 8181 |
 | CI/CD Runner | [docs/cicd-runner.md](cicd-runner.md) | — |
 | Backend Template | [docs/backend-template.md](backend-template.md) | 8000 |
+| Uptime Kuma | [docs/uptime-kuma.md](uptime-kuma.md) | 3001 |
+| Watchtower | [docs/watchtower.md](watchtower.md) | — (internal) |
+| Nginx Proxy Manager | [docs/nginx-proxy-manager.md](nginx-proxy-manager.md) | 80 · 443 · 81 (Admin) |
 
 ## Assumptions
 
