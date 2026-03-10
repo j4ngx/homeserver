@@ -1,0 +1,41 @@
+# =============================================================================
+# Portainer — Docker management UI
+# =============================================================================
+# Provides a web-based interface to manage Docker containers, images,
+# volumes, and networks on the endurance server.
+#
+# Access: http://endurance:9443 (HTTPS) or http://endurance:9000 (HTTP)
+# First login will create the admin user.
+# =============================================================================
+
+services:
+  portainer:
+    image: portainer/portainer-ce:2.27.3
+    container_name: endurance-portainer
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    ports:
+      - "127.0.0.1:9000:9000"   # HTTP  — localhost only (use HTTPS for LAN)
+      - "9443:9443"              # HTTPS — LAN access
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - portainer_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/api/status"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - endurance_frontend
+
+volumes:
+  portainer_data:
+    driver: local
+
+networks:
+  endurance_frontend:
+    external: true
