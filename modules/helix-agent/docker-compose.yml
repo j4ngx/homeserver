@@ -13,7 +13,7 @@
 services:
   helix-agent:
     build:
-      context: ./src
+      context: .
       dockerfile: Dockerfile
     image: endurance-helix-agent:latest
     container_name: endurance-helix-agent
