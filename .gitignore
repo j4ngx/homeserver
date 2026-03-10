@@ -1,0 +1,41 @@
+# =============================================================================
+# Endurance Home Server — .gitignore
+# =============================================================================
+
+# Environment files (contain secrets)
+.env
+modules/*/.env
+
+# Runtime data
+*.db
+*.sqlite3
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# Docker
+docker-compose.override.yml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# Secrets baseline (allow tracking, but audit before commit)
+# .secrets.baseline
