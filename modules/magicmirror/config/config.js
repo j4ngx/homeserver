@@ -206,9 +206,9 @@ let config = {
     // CONTROLADOR DE PÁGINAS — MMM-Pages
     // =========================================================================
     // Requiere haber ejecutado:  module.sh magicmirror install
-    // que clona el módulo en modules/MMM-Pages.
+    // que clona el módulo en modules/MMM-pages.
     {
-      module: "MMM-Pages",
+      module: "MMM-pages",
       config: {
         // Cada sub-array define las clases CSS visibles en esa página.
         // Los módulos sin clase son siempre visibles.
