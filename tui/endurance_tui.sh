@@ -211,7 +211,7 @@ menu_provisioning() {
 
   if tui_confirm "Run base provisioning?" "y"; then
     echo
-    if [[ -x "${PROVISION_DIR}/provision.sh" ]]; then
+    if [[ -f "${PROVISION_DIR}/provision.sh" ]]; then
       if [[ $EUID -eq 0 ]]; then
         bash "${PROVISION_DIR}/provision.sh"
       else
