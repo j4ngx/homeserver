@@ -20,12 +20,16 @@ services:
       - "8181:8080"       # Web interface on LAN
     volumes:
       - ./config:/opt/magic_mirror/config:ro
-      - ./modules:/opt/magic_mirror/modules:ro
-      - ./css:/opt/magic_mirror/css:ro
+      # NOT :ro — entrypoint must write modules/default on first start,
+      # and custom third-party modules (e.g. MMM-Pages) live here too.
+      - ./modules:/opt/magic_mirror/modules
+      # NOT :ro — entrypoint copies css files here on first start.
+      - ./css:/opt/magic_mirror/css
     tmpfs:
       - /tmp
     environment:
       TZ: ${TZ:-Europe/Madrid}
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080"]
       interval: 30s

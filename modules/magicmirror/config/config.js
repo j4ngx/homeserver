@@ -1,174 +1,229 @@
 /* =============================================================================
  * MagicMirror² Configuration — Endurance Home Server
  * =============================================================================
- * Modules:
- *   • Clock       — Local time and date
- *   • Calendar    — iCloud calendar via ICS URL
- *   • Weather     — Current conditions + forecast (OpenWeatherMap)
- *   • Compliments — Random compliments / motivational phrases
- *   • News Feed   — RSS headlines
+ * Two pages managed by MMM-Pages (auto-rotates every 25 s):
  *
- * SETUP INSTRUCTIONS:
- *   1. Replace YOUR_OPENWEATHERMAP_API_KEY with a free key from:
- *      https://openweathermap.org/api  (sign up → API keys)
+ *   Página 1 — Tiempo & Hora
+ *     top_left   : Reloj (siempre visible, sin clase de página)
+ *     top_right  : Tiempo actual    [clase: page1]
+ *     top_right  : Previsión 5 días [clase: page1]
+ *     lower_third: Felicitaciones   [clase: page1]
  *
- *   2. Replace YOUR_ICAL_URL with your iCloud calendar ICS URL:
- *      - Go to icloud.com → Calendar
- *      - Click the share icon next to a calendar
- *      - Enable "Public Calendar" and copy the URL
- *      - The URL looks like: https://p*-caldav.icloud.com/published/2/...
+ *   Página 2 — Agenda
+ *     top_left   : Reloj (siempre visible)
+ *     upper_third: Calendario / eventos [clase: page2]
+ *     bottom_bar : Titulares de noticias [clase: page2]
  *
- *   3. Adjust latitude/longitude for your location.
+ * SETUP:
+ *   1. Crea el fichero .env a partir de .env.example y añade tu clave:
+ *         cp .env.example .env
+ *         # edita .env y pon tu clave en OPENWEATHER_API_KEY
+ *      Obtén una clave gratis en: https://openweathermap.org/api
  *
- *   4. Restart the module: ./provisioning/scripts/module.sh magicmirror restart
+ *   2. Reemplaza YOUR_ICAL_URL con la URL ICS pública de tu calendario:
+ *      - iCloud: icloud.com → Calendario → icono compartir → URL pública
+ *      - Google: calendar.google.com → Configuración → Dirección ICAL
+ *
+ *   3. Para instalar MMM-Pages (una sola vez):
+ *         bash provisioning/scripts/module.sh magicmirror install
+ *
+ *   4. Reinicia: bash provisioning/scripts/module.sh magicmirror restart
  * ========================================================================== */
 
 let config = {
-  address: "0.0.0.0",     // Listen on all interfaces (LAN access)
+  address: "0.0.0.0",
   port: 8080,
   basePath: "/",
-  ipWhitelist: [],         // Allow all IPs on LAN (restrict if needed)
+  ipWhitelist: [],
 
-  language: "en",
-  locale: "en-US",
+  language: "es",
+  locale: "es-ES",
   timeFormat: 24,
   units: "metric",
 
   modules: [
-    // ─── Clock ──────────────────────────────────────────────────
+
+    // =========================================================================
+    // SIEMPRE VISIBLE (sin clase → MMM-Pages nunca lo oculta)
+    // =========================================================================
+
+    // ─── Reloj ────────────────────────────────────────────────────────────────
     {
       module: "clock",
       position: "top_left",
       config: {
         timeFormat: 24,
         showDate: true,
-        showWeek: true,
-        dateFormat: "dddd, D MMMM YYYY",
+        showWeek: false,
+        dateFormat: "dddd, D [de] MMMM YYYY",
+        clockBold: true,
       },
     },
 
-    // ─── Calendar (iCloud via ICS) ──────────────────────────────
-    // INSTRUCTIONS:
-    //   Replace the URL below with your iCloud public calendar ICS URL.
-    //   You can add multiple calendars by adding more entries to the
-    //   "calendars" array.
-    {
-      module: "calendar",
-      header: "Calendar",
-      position: "top_left",
-      config: {
-        maximumEntries: 10,
-        maximumNumberOfDays: 14,
-        fetchInterval: 300000,    // 5 minutes
-        calendars: [
-          {
-            // ╔═══════════════════════════════════════════════════════╗
-            // ║  CHANGE THIS: Your iCloud public calendar ICS URL    ║
-            // ╚═══════════════════════════════════════════════════════╝
-            fetchInterval: 300000,
-            symbol: "calendar-check",
-            url: "YOUR_ICAL_URL",
-            // Example:
-            // url: "https://p74-caldav.icloud.com/published/2/MTIzNDU2Nzg5...",
-          },
-          // Add more calendars here:
-          // {
-          //   symbol: "calendar",
-          //   url: "https://another-calendar-url.ics",
-          //   color: "#e06c75",
-          // },
-        ],
-      },
-    },
+    // =========================================================================
+    // PÁGINA 1 — Tiempo & Hora  (clase: "page1")
+    // =========================================================================
 
-    // ─── Current Weather ────────────────────────────────────────
-    // INSTRUCTIONS:
-    //   1. Get a free API key at https://openweathermap.org/api
-    //   2. Replace YOUR_OPENWEATHERMAP_API_KEY below
-    //   3. Set your city coordinates (lat/lon)
+    // ─── Tiempo actual ────────────────────────────────────────────────────────
     {
       module: "weather",
+      header: "Alhendín — Ahora",
       position: "top_right",
+      classes: "page1",
       config: {
         weatherProvider: "openweathermap",
         type: "current",
-        // ╔═══════════════════════════════════════════════════════╗
-        // ║  CHANGE THIS: Your OpenWeatherMap API key            ║
-        // ╚═══════════════════════════════════════════════════════╝
-        apiKey: "YOUR_OPENWEATHERMAP_API_KEY",
-        // ╔═══════════════════════════════════════════════════════╗
-        // ║  CHANGE THIS: Your city coordinates                  ║
-        // ║  Find yours at: https://www.latlong.net              ║
-        // ╚═══════════════════════════════════════════════════════╝
-        lat: 40.4168,       // Madrid, Spain (example)
-        lon: -3.7038,
+        apiKey: process.env.OPENWEATHER_API_KEY || "",
+        // Alhendín, Granada, España
+        lat: 37.1136,
+        lon: -3.6411,
         units: "metric",
         showHumidity: true,
         showWindSpeed: true,
+        showWindDirection: true,
+        showFeelsLike: true,
+        lang: "es",
       },
     },
 
-    // ─── Weather Forecast ───────────────────────────────────────
+    // ─── Previsión 5 días ─────────────────────────────────────────────────────
     {
       module: "weather",
+      header: "Previsión",
       position: "top_right",
-      header: "Forecast",
+      classes: "page1",
       config: {
         weatherProvider: "openweathermap",
         type: "forecast",
-        apiKey: "YOUR_OPENWEATHERMAP_API_KEY",   // Same key as above
-        lat: 40.4168,
-        lon: -3.7038,
+        apiKey: process.env.OPENWEATHER_API_KEY || "",
+        lat: 37.1136,
+        lon: -3.6411,
         units: "metric",
         maxNumberOfDays: 5,
+        colored: true,
+        lang: "es",
       },
     },
 
-    // ─── Compliments ────────────────────────────────────────────
+    // ─── Felicitaciones ───────────────────────────────────────────────────────
     {
       module: "compliments",
       position: "lower_third",
+      classes: "page1",
       config: {
         compliments: {
           anytime: [
-            "Welcome home",
-            "Looking sharp!",
-            "Systems nominal",
+            "Bienvenido a casa",
+            "Sistemas operativos ✔",
+            "Todo bajo control",
           ],
           morning: [
-            "Good morning!",
-            "Rise and shine",
+            "¡Buenos días!",
+            "Que tengas un gran día",
+            "Comienza con energía",
           ],
           afternoon: [
-            "Good afternoon",
-            "Keep up the great work",
+            "Buenas tardes",
+            "Sigue así",
+            "La tarde es tuya",
           ],
           evening: [
-            "Good evening",
-            "Time to relax",
+            "Buenas noches",
+            "Hora de descansar",
+            "Gran día completado",
           ],
         },
       },
     },
 
-    // ─── News Headlines ─────────────────────────────────────────
+    // =========================================================================
+    // PÁGINA 2 — Agenda & Eventos  (clase: "page2")
+    // =========================================================================
+
+    // ─── Calendario ───────────────────────────────────────────────────────────
+    // ╔══════════════════════════════════════════════════════════════════════╗
+    // ║  CAMBIA ESTO: Tu URL ICS de Google Calendar / iCloud                ║
+    // ║  iCloud:  icloud.com → Calendario → compartir → URL pública         ║
+    // ║  Google:  calendar.google.com → Configuración → Dirección ICAL      ║
+    // ╚══════════════════════════════════════════════════════════════════════╝
+    {
+      module: "calendar",
+      header: "📅  Agenda",
+      position: "upper_third",
+      classes: "page2",
+      config: {
+        maximumEntries: 12,
+        maximumNumberOfDays: 30,
+        fetchInterval: 300000,
+        showEnd: true,
+        dateFormat: "DD/MM HH:mm",
+        fullDayEventDateFormat: "ddd DD/MM",
+        timeFormat: "relative",
+        urgency: 7,
+        calendars: [
+          {
+            fetchInterval: 300000,
+            symbol: "calendar-check",
+            color: "#4fc3f7",
+            url: "YOUR_ICAL_URL",
+            // Ejemplo iCloud:
+            // url: "https://p74-caldav.icloud.com/published/2/XXXXXXXXXXXXXXXX",
+            // Ejemplo Google Calendar:
+            // url: "https://calendar.google.com/calendar/ical/tu%40gmail.com/public/basic.ics",
+          },
+          // Añade más calendarios:
+          // { symbol: "calendar", color: "#ef9a9a", url: "OTRA_URL_ICAL" },
+        ],
+      },
+    },
+
+    // ─── Titulares ────────────────────────────────────────────────────────────
     {
       module: "newsfeed",
       position: "bottom_bar",
+      classes: "page2",
       config: {
         feeds: [
           {
-            title: "BBC News",
+            title: "El País — Tecnología",
+            url: "https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/section/tecnologia/portada",
+          },
+          {
+            title: "BBC Tech",
             url: "https://feeds.bbci.co.uk/news/technology/rss.xml",
           },
         ],
         showSourceTitle: true,
-        showPublishDate: true,
+        showPublishDate: false,
         broadcastNewsFeeds: true,
-        broadcastNewsUpdates: true,
-        maxNewsItems: 5,
+        maxNewsItems: 8,
+        updateInterval: 60000,
+        animationSpeed: 2500,
       },
     },
+
+    // =========================================================================
+    // CONTROLADOR DE PÁGINAS — MMM-Pages
+    // =========================================================================
+    // Requiere haber ejecutado:  module.sh magicmirror install
+    // que clona el módulo en modules/MMM-Pages.
+    {
+      module: "MMM-Pages",
+      config: {
+        // Cada sub-array define las clases CSS visibles en esa página.
+        // Los módulos sin clase son siempre visibles.
+        modules: [
+          ["page1"],    // Página 0 — Tiempo & Hora
+          ["page2"],    // Página 1 — Agenda
+        ],
+        rotationTime: 25000,     // Cambia de página cada 25 s
+        rotationDelay: 5000,     // Espera 5 s en la primera carga
+        rotationHomePage: 0,     // Vuelve a la página de tiempo como "inicio"
+        indicator: true,         // Muestra los puntos de página
+        animationTime: 1000,     // Duración de la transición (ms)
+      },
+    },
+
   ],
 };
 

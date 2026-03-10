@@ -42,32 +42,6 @@ fail()    { echo -e "${RED} ✖  $*${NC}"; exit 1; }
 # Compose command detection
 ###############################################################################
 
-check_docker_access() {
-  # $@ — forward original script args so re-exec preserves them
-  docker info >/dev/null 2>&1 && return 0
-
-  local err
-  err="$(docker info 2>&1 || true)"
-
-  if echo "$err" | grep -q "permission denied"; then
-    # User is in the docker group but the current session was started before
-    # they were added to it.  Re-exec transparently via `sg docker`.
-    if getent group docker 2>/dev/null | grep -qw "$(id -un)"; then
-      info "Docker group not active in this session — re-running with sg docker..."
-      # Build a quoted arg string so spaces in paths survive the exec
-      local -a quoted_args=()
-      for arg in "$@"; do
-        quoted_args+=("$(printf '%q' "$arg")")
-      done
-      exec sg docker -c "bash $(printf '%q' "$0") ${quoted_args[*]}"
-    else
-      fail "Permission denied accessing Docker.\n  Run base provisioning to add your user to the docker group."
-    fi
-  else
-    fail "Docker daemon not reachable. Is Docker running?\n  Try: sudo systemctl start docker"
-  fi
-}
-
 compose_cmd() {
   if docker compose version >/dev/null 2>&1; then
     echo "docker compose"
@@ -425,8 +399,6 @@ main() {
     usage
     exit 1
   fi
-
-  check_docker_access "$@"
 
   local command="$1"
 
