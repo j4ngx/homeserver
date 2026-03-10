@@ -1,0 +1,52 @@
+# =============================================================================
+# CI/CD — Module Health Check (scheduled)
+# =============================================================================
+# Runs daily to verify all deployed modules on endurance are healthy.
+# Fails the workflow if any critical module is unreachable.
+# =============================================================================
+
+name: Endurance Module Health Check
+
+on:
+  schedule:
+    - cron: "0 8 * * *"     # Daily at 08:00 UTC
+  workflow_dispatch:          # Manual trigger
+
+jobs:
+  healthcheck:
+    name: Check module health
+    runs-on: [self-hosted, linux, endurance]
+
+    steps:
+      - name: Check module health
+        run: |
+          FAILED=0
+
+          check_service() {
+            local name="$1"
+            local url="$2"
+            if curl -sf --max-time 10 "$url" >/dev/null 2>&1; then
+              echo "✔ ${name} is running"
+            else
+              echo "✖ ${name} is DOWN"
+              FAILED=$((FAILED + 1))
+            fi
+          }
+
+          check_service "Portainer"        "http://localhost:9000/api/status"
+          check_service "Pi-hole"          "http://localhost:8080/admin/"
+          check_service "MagicMirror"      "http://localhost:8181/"
+          check_service "Backend Template" "http://localhost:8000/health"
+
+          echo ""
+          echo "=== Running containers ==="
+          docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+          echo ""
+          echo "=== Disk usage ==="
+          docker system df
+
+          if [ "$FAILED" -gt 0 ]; then
+            echo ""
+            echo "✖ ${FAILED} module(s) failed health check"
+            exit 1
+          fi

@@ -1,0 +1,60 @@
+# =============================================================================
+# CI/CD — Module Health Check (scheduled)
+# =============================================================================
+# NOTE: The authoritative workflow lives at:
+#   .github/workflows/healthcheck.yml
+# This file is a reference copy.
+# =============================================================================
+
+name: Endurance Module Health Check
+
+on:
+  schedule:
+    - cron: "0 8 * * *"     # Daily at 08:00 UTC
+  workflow_dispatch:          # Manual trigger
+
+jobs:
+  healthcheck:
+    name: Check module health
+    runs-on: [self-hosted, linux, endurance]
+
+    steps:
+      - name: Check Portainer
+        run: |
+          if curl -sf http://localhost:9000/api/status >/dev/null 2>&1; then
+            echo "✔ Portainer is running"
+          else
+            echo "⚠ Portainer is DOWN"
+          fi
+
+      - name: Check Pi-hole
+        run: |
+          if curl -sf http://localhost:8080/admin/ >/dev/null 2>&1; then
+            echo "✔ Pi-hole is running"
+          else
+            echo "⚠ Pi-hole is DOWN"
+          fi
+
+      - name: Check MagicMirror
+        run: |
+          if curl -sf http://localhost:8181/ >/dev/null 2>&1; then
+            echo "✔ MagicMirror is running"
+          else
+            echo "⚠ MagicMirror is DOWN"
+          fi
+
+      - name: Check Backend Template
+        run: |
+          if curl -sf http://localhost:8000/health >/dev/null 2>&1; then
+            echo "✔ Backend Template is running"
+          else
+            echo "⚠ Backend Template is DOWN"
+          fi
+
+      - name: Docker system overview
+        run: |
+          echo "=== Running containers ==="
+          docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+          echo
+          echo "=== Disk usage ==="
+          docker system df
