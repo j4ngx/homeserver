@@ -1,9 +1,8 @@
 # =============================================================================
 # Helix Agent — Homeserver variant
 # =============================================================================
-# Same as the upstream Dockerfile (src/Dockerfile) but resolves dependencies
-# from public PyPI instead of using the frozen lock file (which may reference
-# a corporate Artifactory registry unreachable from the home server).
+# Uses the upstream uv.lock (PyPI-only) for fully reproducible builds.
+# The lock file lives in the helix_agent source repo (src/uv.lock).
 # =============================================================================
 
 # ---------------------------------------------------------------------------
@@ -16,17 +15,17 @@ WORKDIR /build
 # Force dependency resolution against public PyPI
 ENV UV_INDEX_URL=https://pypi.org/simple
 
-# Copy only the manifest — intentionally skip uv.lock so uv resolves fresh
-COPY src/pyproject.toml src/README.md* ./
+# Copy manifests and lock file (layer caching)
+COPY src/pyproject.toml src/README.md* src/uv.lock* ./
 
 # Install production deps into /build/.venv
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --no-dev --extra mcp --no-install-project
+    uv sync --frozen --no-dev --extra mcp --no-install-project
 
 # Copy source code and install the project itself
 COPY src/src/ src/
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --no-dev --extra mcp
+    uv sync --frozen --no-dev --extra mcp
 
 # ---------------------------------------------------------------------------
 # Stage 2 — Runtime
