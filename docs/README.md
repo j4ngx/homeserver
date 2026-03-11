@@ -7,7 +7,7 @@ hostname: endurance
 target:   Debian 13 (fresh install)
 stack:    Docker Engine + Compose · Zsh + OMZ · Portainer · Pi-hole
           MagicMirror² · GitHub Actions runner · FastAPI backend template
-          Uptime Kuma · Watchtower · Nginx Proxy Manager
+          Uptime Kuma · Watchtower · Nginx Proxy Manager · Helix Agent
 ```
 
 ## Table of Contents
@@ -98,7 +98,8 @@ homeserver/
 │   ├── backend-template/       # Reference backend API (FastAPI)
 │   ├── uptime-kuma/            # Service monitoring & alerting
 │   ├── watchtower/             # Automatic container image updater
-│   └── nginx-proxy-manager/    # Reverse proxy + Let's Encrypt SSL
+│   ├── nginx-proxy-manager/    # Reverse proxy + Let's Encrypt SSL
+│   ├── helix-agent/            # Personal AI Telegram assistant
 │   ├── magicmirror/            # Smart display dashboard
 │   ├── cicd-runner/            # GitHub Actions self-hosted runner
 │   └── backend-template/       # Reference backend API (FastAPI)
@@ -118,7 +119,8 @@ homeserver/
     ├── backend-template.md
     ├── uptime-kuma.md
     ├── watchtower.md
-    └── nginx-proxy-manager.md
+    ├── nginx-proxy-manager.md
+    └── helix-agent.md
 ```
 
 ## Base Provisioning
@@ -260,6 +262,7 @@ Workflows live in `.github/workflows/`. Reference templates are also kept in `ci
 | Uptime Kuma | [docs/uptime-kuma.md](uptime-kuma.md) | 3001 |
 | Watchtower | [docs/watchtower.md](watchtower.md) | — (internal) |
 | Nginx Proxy Manager | [docs/nginx-proxy-manager.md](nginx-proxy-manager.md) | 80 · 443 · 81 (Admin) |
+| Helix Agent | [docs/helix-agent.md](helix-agent.md) | — (Telegram bot, no exposed ports) |
 
 ## Assumptions
 
