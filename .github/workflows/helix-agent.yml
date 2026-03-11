@@ -1,0 +1,109 @@
+# =============================================================================
+# CI/CD — Helix Agent Deploy to Endurance
+# =============================================================================
+# Pulls the pre-built Docker image from GHCR (published by the axon_agent
+# repo's publish.yml workflow) and (re)creates the container on endurance.
+#
+# Triggers:
+#   - repository_dispatch  → automated: axon_agent publish triggers this
+#   - workflow_dispatch     → manual: run from the GitHub Actions UI
+#
+# Required secrets (Settings → Secrets → Actions):
+#   HELIX_TELEGRAM_BOT_TOKEN         — from @BotFather
+#   HELIX_TELEGRAM_ALLOWED_USER_IDS  — JSON array, e.g. [123456789]
+#   HELIX_GROQ_API_KEY               — https://console.groq.com
+#   HELIX_OPENROUTER_API_KEY         — https://openrouter.ai (optional)
+#   HELIX_FIREBASE_SERVICE_ACCOUNT   — full JSON of service-account.json
+#   GHCR_PAT                         — PAT with read:packages scope
+# =============================================================================
+
+name: Helix Agent — Deploy
+
+on:
+  repository_dispatch:
+    types: [helix-deploy]
+  workflow_dispatch:
+
+env:
+  IMAGE: ghcr.io/j4ngx/axon_agent:main
+  CONTAINER: endurance-helix-agent
+  # Host path for persistent config (outside of any container FS)
+  HOST_CONFIG_DIR: /opt/helix-agent
+
+jobs:
+  deploy:
+    name: Deploy Helix Agent
+    runs-on: [self-hosted, linux, endurance]
+
+    steps:
+      # ── 1. Write secrets to host filesystem ─────────────────────────
+      #    The runner is Docker-in-Docker so we use a helper container
+      #    with a host bind-mount to write files the daemon can reach.
+      - name: Prepare host config directory
+        run: |
+          docker run --rm -v ${{ env.HOST_CONFIG_DIR }}:/data alpine \
+            mkdir -p /data
+
+      - name: Write .env to host
+        run: |
+          cat <<'ENVEOF' | docker run --rm -i -v ${{ env.HOST_CONFIG_DIR }}:/data alpine tee /data/.env > /dev/null
+          TELEGRAM_BOT_TOKEN=${{ secrets.HELIX_TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALLOWED_USER_IDS=${{ secrets.HELIX_TELEGRAM_ALLOWED_USER_IDS }}
+          GROQ_API_KEY=${{ secrets.HELIX_GROQ_API_KEY }}
+          OPENROUTER_API_KEY=${{ secrets.HELIX_OPENROUTER_API_KEY }}
+          ENVEOF
+
+      - name: Write service-account.json to host
+        run: |
+          echo '${{ secrets.HELIX_FIREBASE_SERVICE_ACCOUNT }}' \
+            | docker run --rm -i -v ${{ env.HOST_CONFIG_DIR }}:/data alpine tee /data/service-account.json > /dev/null
+
+      # ── 2. Pull latest image from GHCR ──────────────────────────────
+      - name: Login to GHCR
+        run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u j4ngx --password-stdin
+
+      - name: Pull image
+        run: docker pull ${{ env.IMAGE }}
+
+      # ── 3. Recreate the container ───────────────────────────────────
+      - name: Stop existing container
+        run: |
+          docker stop ${{ env.CONTAINER }} 2>/dev/null || true
+          docker rm   ${{ env.CONTAINER }} 2>/dev/null || true
+
+      - name: Start container
+        run: |
+          docker run -d \
+            --name ${{ env.CONTAINER }} \
+            --restart unless-stopped \
+            --env-file ${{ env.HOST_CONFIG_DIR }}/.env \
+            -e GOOGLE_APPLICATION_CREDENTIALS=/app/service-account.json \
+            -v helix-data:/app/data \
+            -v ${{ env.HOST_CONFIG_DIR }}/service-account.json:/app/service-account.json:ro \
+            --stop-signal SIGTERM \
+            --health-cmd 'python -c "import helix"' \
+            --health-interval 30s \
+            --health-timeout 10s \
+            --health-retries 3 \
+            --health-start-period 20s \
+            ${{ env.IMAGE }}
+
+      # ── 4. Verify health ────────────────────────────────────────────
+      - name: Wait for health check
+        run: |
+          echo "Waiting for Helix Agent to become healthy..."
+          for i in $(seq 1 30); do
+            if docker exec ${{ env.CONTAINER }} python -c "import helix" 2>/dev/null; then
+              echo "✔ Helix Agent is healthy"
+              exit 0
+            fi
+            echo "  Attempt ${i}/30 — waiting 2s..."
+            sleep 2
+          done
+          echo "✖ Helix Agent did not become healthy in 60s"
+          docker logs ${{ env.CONTAINER }} --tail=50
+          exit 1
+
+      # ── 5. Cleanup ─────────────────────────────────────────────────
+      - name: Prune old images
+        run: docker image prune -f --filter "until=24h"
