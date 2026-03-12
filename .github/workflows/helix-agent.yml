@@ -25,7 +25,7 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE: ghcr.io/j4ngx/axon_agent:main
+  IMAGE: ghcr.io/j4ngx/helix_agent:main
   CONTAINER: endurance-helix-agent
   # Host path for persistent config (outside of any container FS)
   HOST_CONFIG_DIR: /opt/helix-agent

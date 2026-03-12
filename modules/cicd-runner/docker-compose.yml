@@ -17,7 +17,7 @@
 
 services:
   runner:
-    image: myoung34/github-runner:2.321.0
+    image: myoung34/github-runner:2.332.0
     container_name: endurance-gh-runner
     restart: unless-stopped
     security_opt:
