@@ -14,6 +14,7 @@
 #   HELIX_GROQ_API_KEY               — https://console.groq.com
 #   HELIX_OPENROUTER_API_KEY         — https://openrouter.ai (optional)
 #   HELIX_FIREBASE_SERVICE_ACCOUNT   — full JSON of service-account.json
+#   HELIX_ELEVENLABS_API_KEY          — https://elevenlabs.io (optional, TTS)
 #   GHCR_PAT                         — PAT with read:packages scope
 # =============================================================================
 
@@ -71,6 +72,7 @@ jobs:
             -e TELEGRAM_ALLOWED_USER_IDS='${{ secrets.HELIX_TELEGRAM_ALLOWED_USER_IDS }}' \
             -e GROQ_API_KEY=${{ secrets.HELIX_GROQ_API_KEY }} \
             -e OPENROUTER_API_KEY=${{ secrets.HELIX_OPENROUTER_API_KEY }} \
+            -e ELEVENLABS_API_KEY=${{ secrets.HELIX_ELEVENLABS_API_KEY }} \
             -e GOOGLE_APPLICATION_CREDENTIALS=/app/service-account.json \
             -v helix-data:/app/data \
             -v ${{ env.HOST_CONFIG_DIR }}/service-account.json:/app/service-account.json:ro \

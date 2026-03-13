@@ -37,7 +37,30 @@ memory:
 logging:
   level: "INFO"
 
+# -- Weather ------------------------------------------------------------------
+weather:
+  latitude: 37.1773
+  longitude: -3.5986
+  location_name: "Granada"
+
+# -- Vision -------------------------------------------------------------------
+vision:
+  model: "meta-llama/llama-4-scout-17b-16e-instruct"
+
+# -- Document Processing ------------------------------------------------------
+document:
+  chunk_size: 800
+  chunk_overlap: 100
+
+# -- Text-to-Speech (ElevenLabs) ----------------------------------------------
+tts:
+  voice_id: "Ir1QNHvhaJXbAGhT50w3"
+  model_id: "eleven_multilingual_v2"
+  output_format: "mp3_44100_128"
+
 # -- Skills -------------------------------------------------------------------
+# Skills are pluggable capabilities loaded at startup.
+# Each entry has a `type` (builtin | mcp) and type-specific config.
 skills:
   - name: "get_current_time"
     type: "builtin"
@@ -46,3 +69,40 @@ skills:
   - name: "gog"
     type: "builtin"
     enabled: true
+
+  - name: "web_search"
+    type: "builtin"
+    enabled: true
+
+  - name: "system_info"
+    type: "builtin"
+    enabled: true
+
+  - name: "url_fetch"
+    type: "builtin"
+    enabled: true
+
+  - name: "note"
+    type: "builtin"
+    enabled: true
+
+  # -- Homeserver Integration -----------------------------------------------
+  - name: "docker_manage"
+    type: "builtin"
+    enabled: true
+
+  - name: "pihole"
+    type: "builtin"
+    enabled: true
+
+  - name: "uptime_monitor"
+    type: "builtin"
+    enabled: true
+
+  - name: "homeserver_health"
+    type: "builtin"
+    enabled: true
+
+  # Reminder tool is registered directly via DI (not via the skill loader)
+  # because it requires a repository dependency.
+  # No entry needed here — it's always available.
